@@ -479,10 +479,12 @@
                         <div class="content-display">${content}</div>
                         <textarea class="content-edit hidden w-full p-1 border rounded-md resize-none overflow-hidden"></textarea>
                     </td>
-                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium flex items-center space-x-3">
-                        <button class="edit-btn text-pink-500 hover:text-pink-700" data-id="${studentId}"><i class="fas fa-pencil-alt text-xl"></i></button>
-                        <button class="save-btn text-emerald-500 hover:text-emerald-700 hidden" data-id="${studentId}"><i class="fas fa-check text-xl"></i></button>
-                        <button class="details-btn text-violet-500 hover:text-violet-700" data-id="${studentId}"><i class="fas fa-search-plus text-xl"></i></button>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium align-middle">
+                        <div class="flex items-center space-x-3">
+                            <button class="edit-btn text-pink-500 hover:text-pink-700" data-id="${studentId}"><i class="fas fa-pencil-alt text-xl"></i></button>
+                            <button class="save-btn text-emerald-500 hover:text-emerald-700 hidden" data-id="${studentId}"><i class="fas fa-check text-xl"></i></button>
+                            <button class="details-btn text-violet-500 hover:text-violet-700" data-id="${studentId}"><i class="fas fa-search-plus text-xl"></i></button>
+                        </div>
                     </td>
                 `;
                 resultTableBody.appendChild(row);
@@ -846,5 +848,6 @@
     </script>
 </body>
 </html>
+
 
 
