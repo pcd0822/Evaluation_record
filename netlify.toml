@@ -1,3 +1,2 @@
-Netlify 배포 및 함수 설정을 위한 파일
 [build]
 functions = "netlify/functions"
