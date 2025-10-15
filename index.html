@@ -80,31 +80,6 @@
             <p class="absolute bottom-4 right-6 text-sm text-white/50">Designed by 들쌤</p>
         </header>
 
-        <!-- API 설정 -->
-        <section class="interactive-section mb-8 p-6 bg-white rounded-2xl shadow-lg">
-            <div class="flex items-center mb-4">
-                <i class="fas fa-key text-violet-500 text-xl mr-3"></i>
-                <h2 class="text-2xl font-bold">API 설정</h2>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="md:col-span-2">
-                    <label for="api-key" class="block text-sm font-medium text-slate-700 mb-1">API 키</label>
-                    <input type="password" id="api-key" placeholder="OpenAI 또는 Gemini API 키를 입력하세요" class="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent">
-                </div>
-                <div>
-                    <label for="api-provider" class="block text-sm font-medium text-slate-700 mb-1">API 선택</label>
-                    <select id="api-provider" class="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent">
-                        <option value="openai">OpenAI</option>
-                        <option value="gemini">Google Gemini</option>
-                    </select>
-                </div>
-            </div>
-            <button id="save-api-key" class="mt-4 w-full md:w-auto bg-violet-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 transition-colors">
-                <i class="fas fa-save mr-2"></i>API 키 저장
-            </button>
-            <p id="api-status" class="text-sm text-green-600 mt-2 ml-1"></p>
-        </section>
-
         <!-- 교육과정-수업 맥락 설정 -->
         <section class="interactive-section mb-8 p-6 bg-white rounded-2xl shadow-lg">
              <div class="flex items-center mb-4">
@@ -293,11 +268,6 @@
             document.getElementById('copyright-year').textContent = new Date().getFullYear();
 
             // Element References
-            const apiKeyInput = document.getElementById('api-key');
-            const apiProviderSelect = document.getElementById('api-provider');
-            const saveApiKeyBtn = document.getElementById('save-api-key');
-            const apiStatus = document.getElementById('api-status');
-            
             const recordTypeSelect = document.getElementById('record-type');
             const subjectWrapper = document.getElementById('subject-wrapper');
 
@@ -327,11 +297,9 @@
             let studentData = {}; // { studentId: { content: '', originalContent: '', reasoning: '' } }
             
             // --- Initialization ---
-            loadApiConfig();
             loadFormData();
 
             // --- Event Listeners ---
-            saveApiKeyBtn.addEventListener('click', saveApiConfig);
             recordTypeSelect.addEventListener('change', toggleSubjectVisibility);
             
             // Animation for sections
@@ -667,41 +635,20 @@
             }
 
             async function callGenerativeAPI(fileContent, level, isReasoning = false) {
-                const apiKey = localStorage.getItem('apiKey');
-                const apiProvider = localStorage.getItem('apiProvider') || 'openai';
-
-                if (!apiKey) {
-                    throw new Error("API 키가 설정되지 않았습니다. API 설정 섹션에서 키를 입력하고 저장해주세요.");
-                }
-
                 const prompt = isReasoning ? fileContent : buildPrompt(fileContent, level);
-                let response;
+                const apiKey = ""; // API 키는 환경에 의해 제공됩니다.
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
                 try {
-                    if (apiProvider === 'openai') {
-                        response = await fetch('https://api.openai.com/v1/chat/completions', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${apiKey}`
-                            },
-                            body: JSON.stringify({
-                                model: 'gpt-4o',
-                                messages: [{ role: 'user', content: prompt }],
-                                temperature: 0.7,
-                            })
-                        });
-                    } else { // Gemini
-                         response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                contents: [{ parts: [{ text: prompt }] }]
-                            })
-                        });
-                    }
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }]
+                        })
+                    });
 
                     if (!response.ok) {
                         const errorData = await response.json();
@@ -709,13 +656,7 @@
                     }
 
                     const data = await response.json();
-                    let resultText = '';
-
-                    if (apiProvider === 'openai') {
-                        resultText = data.choices[0]?.message?.content;
-                    } else { // Gemini
-                        resultText = data.candidates[0]?.content?.parts[0]?.text;
-                    }
+                    const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
                     
                     return resultText ? resultText.trim() : '결과를 생성하지 못했습니다.';
 
@@ -858,28 +799,6 @@
                 document.body.removeChild(textarea);
             }
 
-            function saveApiConfig() {
-                const key = apiKeyInput.value;
-                const provider = apiProviderSelect.value;
-                if (key) {
-                    localStorage.setItem('apiKey', key);
-                    localStorage.setItem('apiProvider', provider);
-                    apiStatus.textContent = `${provider.toUpperCase()} API 키가 브라우저에 저장되었습니다.`;
-                    setTimeout(() => apiStatus.textContent = '', 3000);
-                } else {
-                    apiStatus.textContent = 'API 키를 입력해주세요.';
-                    apiStatus.classList.remove('text-green-600');
-                    apiStatus.classList.add('text-red-600');
-                }
-            }
-
-            function loadApiConfig() {
-                const savedKey = localStorage.getItem('apiKey');
-                const savedProvider = localStorage.getItem('apiProvider');
-                if (savedKey) apiKeyInput.value = savedKey;
-                if (savedProvider) apiProviderSelect.value = savedProvider;
-            }
-            
             function saveFormData() {
                 const formData = {
                     curriculumInfo: document.getElementById('curriculum-info').value,
@@ -909,5 +828,4 @@
     </script>
 </body>
 </html>
-
 
