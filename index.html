@@ -635,33 +635,42 @@
             }
 
             async function callGenerativeAPI(fileContent, level, isReasoning = false) {
+                 const apiKey = ""; // This will be replaced by the Netlify environment variable
                 const prompt = isReasoning ? fileContent : buildPrompt(fileContent, level);
-                const apiKey = ""; // API 키는 환경에 의해 제공됩니다.
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
-
+                
                 try {
-                    const response = await fetch(apiUrl, {
+                    const response = await fetch('https://api.openai.com/v1/chat/completions', {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json'
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
                         },
                         body: JSON.stringify({
-                            contents: [{ parts: [{ text: prompt }] }]
+                            model: 'gpt-4o',
+                            messages: [{ role: 'user', content: prompt }],
+                            temperature: 0.7,
                         })
                     });
 
                     if (!response.ok) {
                         const errorData = await response.json();
+                        // Check for specific authentication error from OpenAI
+                        if (response.status === 401) {
+                             throw new Error('OpenAI API 키가 유효하지 않거나 설정되지 않았습니다. Netlify 환경 변수를 확인해주세요.');
+                        }
                         throw new Error(`API 요청 실패: ${errorData.error?.message || response.statusText}`);
                     }
 
                     const data = await response.json();
-                    const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                    const resultText = data.choices[0]?.message?.content;
                     
                     return resultText ? resultText.trim() : '결과를 생성하지 못했습니다.';
 
                 } catch (error) {
                     console.error("API Call Error:", error);
+                    if (error.name === 'TypeError') { // This often indicates a network-level issue
+                        throw new Error('네트워크 오류 또는 API 서버에 연결할 수 없습니다. 방화벽이나 광고 차단기(AdBlock) 설정을 확인해 주세요.');
+                    }
                     throw error;
                 }
             }
@@ -798,7 +807,7 @@
                 }
                 document.body.removeChild(textarea);
             }
-
+            
             function saveFormData() {
                 const formData = {
                     curriculumInfo: document.getElementById('curriculum-info').value,
